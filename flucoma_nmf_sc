@@ -1,0 +1,44 @@
+//buffers de treinamento
+~sax = Buffer.read(s, "/Users/feliperomagna/Library/Mobile Documents/com~apple~CloudDocs/Documents/Pessoais/Doutorado/Doutorado UFMG/Disciplinas/2024/estudos_sc/5yEo_gS5Eds.wav");
+~songsax = Buffer.read(s, "/Users/feliperomagna/Library/Mobile Documents/com~apple~CloudDocs/Documents/Pessoais/Doutorado/Doutorado UFMG/Disciplinas/2024/python24/sax_soprano_duet/w6Vraxq69Wo.wav");
+
+~songsax.play;
+
+//carrega os buffers limpos
+~resynth = Buffer(s);
+~bases = Buffer(s);
+~activations = Buffer(s);
+
+//define numero de componentes da decomposicao
+~n_components = 3;
+
+//treinamento
+FluidBufNMF.processBlocking(s,~sax,bases:~bases,activations:~activations,resynth:~resynth,resynthMode:1,components:~n_components,action:{"done".postln;});
+
+//teste
+// ~resynth.play;
+
+//play live
+(
+{
+
+	//var src = SoundIn.ar(0);//PlayBuf.ar(1,~mic,BufRateScale.ir(~mic),doneAction:2);
+
+	var src = PlayBuf.ar(1,~songsax,BufRateScale.ir(~songsax), doneAction: 2);
+	var sig = FluidNMFFilter.ar(src,~bases, 3);
+	var mix;
+	mix = sig[0];
+	//mix = Select.ar(MouseY.kr(0,2).round.poll, sig)!2;
+
+	//mix = Splay.ar(sig);
+
+    //mix = mix + CombN.ar(sig[2],0.1,[0.09,0.1],1.0);
+    //mix = mix + CombC.ar(sig[1],0.2,LFTri.kr(0.1).range(0.0,0.2));
+	//mix = mix + GVerb.ar(sig[0],100,7,0.9,drylevel:0,mul:-10.dbamp);
+	mix = mix + CombL.ar(in: mix, maxdelaytime: 0.4, delaytime: 0.2, decaytime: 2, mul: 0.8);
+	mix = mix + GVerb.ar(sig[0, 2], 100,7,0.9,drylevel:0,mul:-5.dbamp);
+
+	mix;
+}.scope(outbus: 0)
+)
+
