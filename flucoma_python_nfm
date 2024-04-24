@@ -1,0 +1,88 @@
+import os
+from pathlib import Path
+
+# Add the directory containing binaries to the PATH environment variable
+binaries_dir = '/Users/feliperomagna/Documents/FluidCorpusManipulation/bin'
+os.environ["PATH"] += os.pathsep + binaries_dir
+
+
+###
+
+from pathlib import Path
+from flucoma import fluid
+from flucoma.utils import get_buffer
+from pyo import *
+
+source = Path("5yEo_gS5Eds.wav")
+
+# It might be the case that you want to store the outputs of each process in a specific place
+# By specifiying the outputs you don't need to even return anything from a fluid.processor()
+resynth = Path("resynth.wav")
+activations = Path("activations.wav")
+bases = Path("bases.wav")
+
+
+fluid.nmf(
+    source,
+    resynth=resynth,
+    activations=activations,
+    bases=bases,
+    components=3,
+    iterations=50,
+    fftsettings=[256, 128, 256],
+)
+# this would push the outputs to the location on disk
+# which can then be referenced somewhere else
+# or the values can be extracted for whatever else you'd like to do (numpy, pandas, global domination)
+
+activation_values = get_buffer(bases)
+print(activation_values)
+
+# The return can also be passed along to some other process
+
+fluid.stats(activations)
+
+# This could also be useful for caching your processing.
+# You might check if something already exists and then skip reprocessing to save time.
+
+
+
+############################################PYO
+
+
+
+# Inicializar o servidor de áudio do Pyo
+s = Server().boot()
+s.start()
+
+
+# snd = SndTable("activations.wav")
+# snd.view()
+# s.gui()
+
+activation_player = SfPlayer("activations.wav", speed= 0.07, loop=True) #alterar velocidade do arquivo activations, deixando ele mais lento por conta do SR. Carregar em um buffer
+# Definir um oscilador
+osc = Sine(freq=330, mul=0.5)
+
+
+# Definir um objeto para modular o oscilador com base nas ativações
+modulated_osc = osc * activation_player
+
+# Definir a saída de áudio
+modulated_osc.out()
+
+# Deixe o script rodando
+s.gui(locals())
+
+
+##tentativa de recriar NMFFilter
+
+# # Definir um objeto para reproduzir o arquivo de ativações
+# activation_player = SfPlayer("bases.wav", speed= 0.003, loop=True).out() #alterar velocidade do arquivo activations, deixando ele mais lento por conta do SR. Carregar em um buffer
+# audio_to_process = SfPlayer("/Users/feliperomagna/Library/Mobile Documents/com~apple~CloudDocs/Documents/Pessoais/Doutorado/Doutorado UFMG/Disciplinas/2024/python24/sax_soprano_duet/w6Vraxq69Wo.wav", speed=1, loop=True)
+
+# processed_audio = audio_to_process * activation_player
+
+# processed_audio.out()
+
+# s.gui(locals())
